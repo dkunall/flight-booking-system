@@ -1,0 +1,17 @@
+# Used by docker-compose: PostgreSQL + Redis-backed Spring Cache.
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://postgres:5432/flightdb}
+  cache:
+    type: redis
+    redis:
+      time-to-live: 60s
+      key-prefix: "fbs::"
+  data:
+    redis:
+      host: ${REDIS_HOST:redis}
+      port: ${REDIS_PORT:6379}
+management:
+  health:
+    redis:
+      enabled: true

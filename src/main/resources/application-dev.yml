@@ -1,0 +1,7 @@
+# 'dev' = load seed data (Indian airports, airlines, routes, 7 days of schedules).
+app:
+  seed:
+    enabled: true
+logging:
+  level:
+    com.kunal.flightbooking: DEBUG

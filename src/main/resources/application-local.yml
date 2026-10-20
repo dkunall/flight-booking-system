@@ -1,0 +1,10 @@
+# Run without any external infra: in-memory H2 in PostgreSQL compatibility mode.
+#   ./mvnw spring-boot:run -Dspring-boot.run.profiles=local,dev
+spring:
+  datasource:
+    url: jdbc:h2:mem:flightdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH;LOCK_TIMEOUT=10000;DB_CLOSE_DELAY=-1
+    username: sa
+    password: ""
+  h2:
+    console:
+      enabled: true
