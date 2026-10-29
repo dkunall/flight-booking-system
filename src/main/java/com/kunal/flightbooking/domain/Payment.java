@@ -65,7 +65,9 @@ public class Payment {
     public void markSuccess(String gatewayReference) {
         requireStatus(PaymentStatus.INITIATED);
         this.status = PaymentStatus.SUCCESS;
-        this.gatewayReference = gatewayReference;
+        if (gatewayReference != null) {
+            this.gatewayReference = gatewayReference;
+        }
     }
 
     public void markFailed(String reason) {
@@ -74,9 +76,22 @@ public class Payment {
         this.failureReason = reason;
     }
 
+    /** Async methods (netbanking): we know the bank's reference before we know the outcome. */
+    public void markAwaitingCallback(String gatewayReference) {
+        requireStatus(PaymentStatus.INITIATED);
+        this.gatewayReference = gatewayReference;
+    }
+
     public void markRefunded() {
         requireStatus(PaymentStatus.SUCCESS);
         this.status = PaymentStatus.REFUNDED;
+    }
+
+    /** The bank captured money after we had already given up on the payment, so it goes straight back. */
+    public void markLateCaptureRefunded() {
+        requireStatus(PaymentStatus.FAILED);
+        this.status = PaymentStatus.REFUNDED;
+        this.failureReason = "LATE_CAPTURE_REFUNDED";
     }
 
     private void requireStatus(PaymentStatus expected) {

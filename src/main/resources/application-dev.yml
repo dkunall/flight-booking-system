@@ -3,6 +3,8 @@ app:
   jwt:
     # Throwaway key so `dev` boots without setup. Never used outside the dev profile.
     secret: ${JWT_SECRET:dev-only-insecure-signing-key-override-with-JWT_SECRET-env}
+  payments:
+    webhook-secret: ${PAYMENT_WEBHOOK_SECRET:dev-only-webhook-secret-override-with-PAYMENT_WEBHOOK_SECRET}
   seed:
     enabled: true
 logging:

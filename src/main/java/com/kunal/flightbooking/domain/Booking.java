@@ -108,7 +108,9 @@ public class Booking {
         return user.getId().equals(userId);
     }
 
+    /** A booking waiting on a netbanking callback still holds seats, so it can expire too. */
     public boolean isHoldExpired(LocalDateTime now) {
-        return status == BookingStatus.SEATS_HELD && holdExpiresAt != null && !holdExpiresAt.isAfter(now);
+        return (status == BookingStatus.SEATS_HELD || status == BookingStatus.PAYMENT_PENDING)
+                && holdExpiresAt != null && !holdExpiresAt.isAfter(now);
     }
 }

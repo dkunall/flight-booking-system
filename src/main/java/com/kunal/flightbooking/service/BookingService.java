@@ -165,7 +165,8 @@ public class BookingService {
 
     @Transactional(readOnly = true)
     public List<Long> findExpiredHoldIds() {
-        return bookingRepository.findIdsWithExpiredHold(BookingStatus.SEATS_HELD, LocalDateTime.now(clock));
+        return bookingRepository.findIdsWithExpiredHold(
+                List.of(BookingStatus.SEATS_HELD, BookingStatus.PAYMENT_PENDING), LocalDateTime.now(clock));
     }
 
     /**
@@ -179,6 +180,9 @@ public class BookingService {
             return false;
         }
         releaseSeats(booking);
+        // A netbanking payment still waiting on its callback is abandoned; a late success gets refunded.
+        paymentRepository.findFirstByBookingIdAndStatus(booking.getId(), PaymentStatus.INITIATED)
+                .ifPresent(p -> p.markFailed("HOLD_EXPIRED"));
         booking.setFailureReason("HOLD_EXPIRED");
         booking.transitionTo(BookingStatus.FAILED);
         log.info("Hold expired for booking {}, seats released", booking.getPnr());

@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,8 +23,9 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     @Query("select b from Booking b where b.user.id = :userId order by b.createdAt desc")
     List<Booking> findByUserId(@Param("userId") Long userId);
 
-    @Query("select b.id from Booking b where b.status = :status and b.holdExpiresAt <= :now order by b.holdExpiresAt")
-    List<Long> findIdsWithExpiredHold(@Param("status") BookingStatus status, @Param("now") LocalDateTime now);
+    @Query("select b.id from Booking b where b.status in :statuses and b.holdExpiresAt <= :now order by b.holdExpiresAt")
+    List<Long> findIdsWithExpiredHold(@Param("statuses") Collection<BookingStatus> statuses,
+                                      @Param("now") LocalDateTime now);
 
     /**
      * Revenue per route from confirmed bookings: rows of [source, destination, bookings, passengers, revenue].

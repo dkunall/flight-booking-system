@@ -53,6 +53,8 @@ app:
   jwt:
     secret: ${JWT_SECRET:}        # required; the dev profile has a throwaway default
     expiration-minutes: 120
+  payments:
+    webhook-secret: ${PAYMENT_WEBHOOK_SECRET:}   # required; the dev profile has a throwaway default
   booking:
     hold-minutes: 10
     max-passengers: 9

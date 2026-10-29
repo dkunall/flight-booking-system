@@ -8,6 +8,8 @@ spring:
 app:
   jwt:
     secret: test-only-signing-key-used-by-the-automated-test-suite-0123456789
+  payments:
+    webhook-secret: test-only-webhook-secret-used-by-the-test-suite-0123
   scheduling:
     enabled: false   # tests trigger the schedulers explicitly
 logging:
