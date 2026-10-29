@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 
 /**
- * Step 2: dynamic pricing. The fuller the cabin, the higher the multiplier.
+ * Occupancy pricing: the fuller the cabin, the higher the multiplier.
  * Tiers: under 50% full x1.00, 50-75% x1.15, 75-90% x1.30, 90%+ x1.50.
  */
 @Component
