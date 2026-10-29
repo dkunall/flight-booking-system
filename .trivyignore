@@ -1,0 +1,4 @@
+# spring-webmvc 6.2.19 is the newest 6.2.x; the fix only exists in 7.0.x (Spring Boot 4).
+# Tracked in the README under "what's missing" until the Boot 4 upgrade.
+CVE-2026-47884
+CVE-2026-47890

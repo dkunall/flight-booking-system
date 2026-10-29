@@ -9,7 +9,7 @@ RUN mvn -B -q -ntp package -DskipTests && cp target/flight-booking-system-*.jar 
 # Run
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
-RUN addgroup -S app && adduser -S -G app -H app
+RUN apk upgrade --no-cache && addgroup -S app && adduser -S -G app -H app
 COPY --from=build /build/app.jar app.jar
 USER app
 EXPOSE 8080 8081
