@@ -24,7 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class SeatHoldConcurrencyIT extends IntegrationTestBase {
 
-    private static final int THREADS = 12;
+    private static final int THREADS = 20;
 
     @Autowired BookingService bookingService;
     @Autowired SeatRepository seatRepository;

@@ -1,8 +1,6 @@
+# Datasource comes from the Testcontainers PostgreSQL in IntegrationTestBase (@ServiceConnection).
 spring:
   datasource:
-    url: jdbc:h2:mem:flightdb_test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH;LOCK_TIMEOUT=10000;DB_CLOSE_DELAY=-1
-    username: sa
-    password: ""
     hikari:
       maximum-pool-size: 30
   cache:
@@ -11,7 +9,7 @@ app:
   jwt:
     secret: test-only-signing-key-used-by-the-automated-test-suite-0123456789
   scheduling:
-    enabled: false   # tests trigger HoldExpiryScheduler explicitly
+    enabled: false   # tests trigger the schedulers explicitly
 logging:
   level:
     com.kunal.flightbooking: INFO

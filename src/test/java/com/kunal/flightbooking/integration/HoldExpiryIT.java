@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -40,8 +41,8 @@ class HoldExpiryIT extends IntegrationTestBase {
                 List.of(new PassengerRequest("On Time", 30, Gender.MALE, seats.get(1))), null));
 
         // Simulate the 10 minutes passing for the first booking only.
-        jdbc.update("UPDATE bookings SET hold_expires_at = DATEADD('MINUTE', -1, CURRENT_TIMESTAMP) WHERE id = ?",
-                expired.id());
+        jdbc.update("UPDATE bookings SET hold_expires_at = ? WHERE id = ?",
+                LocalDateTime.now().minusMinutes(1), expired.id());
 
         assertThatThrownBy(() -> paymentService.pay(expired.id(), user.getId(),
                 new PaymentRequest(PaymentMethod.UPI, "late@okaxis", null)))
