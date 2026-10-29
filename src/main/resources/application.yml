@@ -1,6 +1,8 @@
 spring:
   application:
     name: flight-booking-system
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/flightdb}
     username: ${DB_USERNAME:flight}
@@ -34,11 +36,20 @@ spring:
 
 server:
   port: ${PORT:8080}
+  shutdown: graceful              # finish in-flight requests on SIGTERM
+  forward-headers-strategy: ${FORWARD_HEADERS_STRATEGY:none}   # set to native behind a trusted proxy
   error:
     include-stacktrace: never
 
 management:
-  endpoints.web.exposure.include: health,info
+  endpoints.web.exposure.include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true             # /actuator/health/liveness and /readiness
+  metrics:
+    tags:
+      application: ${spring.application.name}
   health:
     redis:
       enabled: false
@@ -63,6 +74,12 @@ app:
     search-eviction-ms: 60000
   outbox:
     relay-ms: 1000
+  rate-limit:
+    search:
+      enabled: true
+      capacity: 30                # burst per client IP
+      refill-per-second: 10
+      max-clients: 10000
   scheduling:
     enabled: true
   seed:

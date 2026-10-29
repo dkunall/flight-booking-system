@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Validator;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -35,12 +36,14 @@ public class PaymentCallbackController {
     private final PaymentService paymentService;
     private final ObjectMapper objectMapper;
     private final Validator validator;
+    private final MeterRegistry meters;
 
     @Operation(summary = "Gateway callback for async payments (HMAC-SHA256 signed)")
     @PostMapping(path = "/api/payments/callback", consumes = MediaType.APPLICATION_JSON_VALUE)
     public Map<String, String> callback(@RequestHeader(value = SIGNATURE_HEADER, required = false) String signature,
                                         @RequestBody byte[] body) {
         if (!verifier.isValid(body, signature)) {
+            meters.counter("payment.callbacks", "outcome", "INVALID_SIGNATURE").increment();
             throw new BusinessException(HttpStatus.UNAUTHORIZED, "INVALID_SIGNATURE",
                     "Callback signature does not match");
         }
@@ -56,6 +59,7 @@ public class PaymentCallbackController {
         }
         var outcome = paymentService.handleCallback(request.gatewayReference(), "SUCCESS".equals(request.status()),
                 request.failureReason());
+        meters.counter("payment.callbacks", "outcome", outcome.name()).increment();
         return Map.of("result", outcome.name());
     }
 }
