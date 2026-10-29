@@ -27,7 +27,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     /**
      * Revenue per route from confirmed bookings: rows of [source, destination, bookings, passengers, revenue].
-     * Native SQL to show the joins/aggregation explicitly; portable across PostgreSQL and H2.
+     * Native SQL so the joins and aggregation are explicit.
      */
     @Query(value = """
             SELECT src.code AS source_code,

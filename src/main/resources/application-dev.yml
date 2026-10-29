@@ -1,5 +1,8 @@
 # 'dev' = load seed data (Indian airports, airlines, routes, 7 days of schedules).
 app:
+  jwt:
+    # Throwaway key so `dev` boots without setup. Never used outside the dev profile.
+    secret: ${JWT_SECRET:dev-only-insecure-signing-key-override-with-JWT_SECRET-env}
   seed:
     enabled: true
 logging:

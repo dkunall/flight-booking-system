@@ -1,6 +1,6 @@
 -- =====================================================================
 -- Flight Booking System - core schema
--- Portable between PostgreSQL 13+ and H2 (MODE=PostgreSQL) used in tests.
+-- PostgreSQL 13+.
 -- =====================================================================
 
 CREATE TABLE users (

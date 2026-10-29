@@ -51,8 +51,7 @@ springdoc:
 
 app:
   jwt:
-    # Dev placeholder only. Always override with the JWT_SECRET env var outside local development.
-    secret: ${JWT_SECRET:dev-only-insecure-signing-key-override-with-JWT_SECRET-env}
+    secret: ${JWT_SECRET:}        # required; the dev profile has a throwaway default
     expiration-minutes: 120
   booking:
     hold-minutes: 10
