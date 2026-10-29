@@ -5,11 +5,14 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
+import org.springframework.http.MediaType;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -91,6 +94,10 @@ class FlightSearchIT extends IntegrationTestBase {
     void rejectsInvalidQueriesWithStructuredErrors() throws Exception {
         mvc.perform(get("/api/flights/search?from=DELHI&to=BOM&date=" + date + "&passengers=0"))
                 .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.type").value("https://flightbooking.dev/problems/validation-failed"))
+                .andExpect(jsonPath("$.instance").value("/api/flights/search"))
                 .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
                 .andExpect(jsonPath("$.fieldErrors[*].field", hasItems("from", "passengers")))
                 .andExpect(jsonPath("$.correlationId").isNotEmpty());

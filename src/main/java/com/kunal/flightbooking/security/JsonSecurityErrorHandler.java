@@ -1,12 +1,10 @@
 package com.kunal.flightbooking.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.kunal.flightbooking.config.CorrelationIdFilter;
-import com.kunal.flightbooking.exception.ErrorResponse;
+import com.kunal.flightbooking.exception.Problems;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
@@ -16,9 +14,8 @@ import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.time.Instant;
 
-/** Writes the same structured error JSON for 401/403 raised inside the security filter chain. */
+/** Writes the same problem+json body for 401/403 raised inside the security filter chain. */
 @Component
 @RequiredArgsConstructor
 public class JsonSecurityErrorHandler implements AuthenticationEntryPoint, AccessDeniedHandler {
@@ -40,9 +37,8 @@ public class JsonSecurityErrorHandler implements AuthenticationEntryPoint, Acces
     private void write(HttpServletResponse response, HttpServletRequest request, HttpStatus status, String code,
                        String message) throws IOException {
         response.setStatus(status.value());
-        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        objectMapper.writeValue(response.getOutputStream(), new ErrorResponse(Instant.now(), status.value(),
-                status.getReasonPhrase(), code, message, request.getRequestURI(),
-                MDC.get(CorrelationIdFilter.MDC_KEY), null));
+        response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
+        objectMapper.writeValue(response.getOutputStream(),
+                Problems.of(status, code, message, request.getRequestURI()));
     }
 }
