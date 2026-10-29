@@ -45,6 +45,16 @@ public interface FlightScheduleRepository extends JpaRepository<FlightSchedule, 
                                                  @Param("status") ScheduleStatus status,
                                                  @Param("airlines") Collection<String> airlines);
 
+    /** Every scheduled departure in a window; input for multi-leg route search. */
+    @Query("""
+            select fs from FlightSchedule fs
+            join fetch fs.flight f
+            join fetch f.airline join fetch f.source join fetch f.destination
+            where fs.departureTime >= :start and fs.departureTime < :end and fs.status = :status
+            """)
+    List<FlightSchedule> findDepartingBetween(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end,
+                                              @Param("status") ScheduleStatus status);
+
     @Query("""
             select fs from FlightSchedule fs
             join fetch fs.flight f

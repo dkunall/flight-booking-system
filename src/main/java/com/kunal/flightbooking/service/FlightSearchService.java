@@ -8,6 +8,7 @@ import com.kunal.flightbooking.domain.SeatStatus;
 import com.kunal.flightbooking.dto.mapper.DtoMapper;
 import com.kunal.flightbooking.dto.response.FlightSearchResult;
 import com.kunal.flightbooking.dto.response.PageResponse;
+import com.kunal.flightbooking.dto.response.RouteOption;
 import com.kunal.flightbooking.dto.response.SeatResponse;
 import com.kunal.flightbooking.exception.BusinessException;
 import com.kunal.flightbooking.exception.ResourceNotFoundException;
@@ -24,7 +25,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -46,6 +49,9 @@ public class FlightSearchService {
     private final SeatRepository seatRepository;
     private final FareCalculator fareCalculator;
     private final Clock clock;
+
+    static final Duration MIN_CONNECTION = Duration.ofMinutes(45);
+    static final Duration MAX_LAYOVER = Duration.ofHours(6);
 
     @Transactional(readOnly = true)
     @Cacheable(cacheNames = CacheNames.FLIGHT_SEARCH, key = "#criteria")
@@ -85,6 +91,62 @@ public class FlightSearchService {
                 .toList();
 
         return PageResponse.of(results, criteria.page(), criteria.size());
+    }
+
+    /** Itineraries with up to 2 connections, built by {@link RouteFinder} over the next ~2 days of flights. */
+    @Transactional(readOnly = true)
+    @Cacheable(cacheNames = CacheNames.ROUTE_SEARCH, key = "#criteria")
+    public List<RouteOption> routes(RouteSearchCriteria criteria) {
+        if (criteria.from().equals(criteria.to())) {
+            throw BusinessException.badRequest("INVALID_ROUTE", "Origin and destination must differ");
+        }
+        LocalDateTime start = criteria.date().atStartOfDay();
+        LocalDateTime now = LocalDateTime.now(clock);
+        List<FlightSchedule> schedules = scheduleRepository
+                .findDepartingBetween(start, start.plusDays(2), ScheduleStatus.SCHEDULED).stream()
+                .filter(s -> s.isBookable(now))
+                .toList();
+        if (schedules.isEmpty()) {
+            return List.of();
+        }
+        Map<Long, Map<SeatClass, Integer>> availability =
+                availableSeats(schedules.stream().map(FlightSchedule::getId).toList());
+        FlightSearchCriteria fareInput = new FlightSearchCriteria(criteria.from(), criteria.to(), criteria.date(),
+                criteria.passengers(), criteria.seatClass(), null, null, List.of(), null, null, 0, 1);
+
+        Map<Long, FlightSearchResult> byId = new HashMap<>();
+        List<RouteFinder.Leg> legs = new ArrayList<>();
+        for (FlightSchedule s : schedules) {
+            int seats = availability.getOrDefault(s.getId(), Map.of()).getOrDefault(criteria.seatClass(), 0);
+            if (seats < criteria.passengers()) {
+                continue;
+            }
+            FlightSearchResult r = toResult(s, fareInput, seats);
+            byId.put(r.scheduleId(), r);
+            legs.add(new RouteFinder.Leg(r.scheduleId(), r.sourceCode(), r.destinationCode(), r.departureTime(),
+                    r.arrivalTime(), r.farePerPassenger()));
+        }
+
+        var rules = new RouteFinder.Rules(criteria.maxStops(), MIN_CONNECTION, MAX_LAYOVER, criteria.limit(),
+                criteria.sortBy());
+        return new RouteFinder(legs).find(criteria.from(), criteria.to(), start, start.plusDays(1), rules).stream()
+                .map(path -> toOption(path.stream().map(l -> byId.get(l.id())).toList(), criteria.passengers()))
+                .toList();
+    }
+
+    private static RouteOption toOption(List<FlightSearchResult> legs, int passengers) {
+        FlightSearchResult first = legs.get(0);
+        FlightSearchResult last = legs.get(legs.size() - 1);
+        BigDecimal fare = legs.stream().map(FlightSearchResult::farePerPassenger).reduce(BigDecimal.ZERO, BigDecimal::add);
+        List<Long> layovers = new ArrayList<>();
+        for (int i = 1; i < legs.size(); i++) {
+            layovers.add(Duration.between(legs.get(i - 1).arrivalTime(), legs.get(i).departureTime()).toMinutes());
+        }
+        return new RouteOption(legs.size() - 1,
+                legs.subList(1, legs.size()).stream().map(FlightSearchResult::sourceCode).toList(),
+                first.departureTime(), last.arrivalTime(),
+                Duration.between(first.departureTime(), last.arrivalTime()).toMinutes(),
+                List.copyOf(layovers), fare, fare.multiply(BigDecimal.valueOf(passengers)), List.copyOf(legs));
     }
 
     @Transactional(readOnly = true)

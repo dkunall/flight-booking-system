@@ -78,7 +78,9 @@ public class DevDataSeeder implements ApplicationRunner {
                 new Route("AI503", "AI", "BLR", "DEL", LocalTime.of(20, 10), 170, "6299", "18999"),
                 new Route("QP1402", "QP", "BOM", "BLR", LocalTime.of(11, 20), 100, "3899", "11999"),
                 new Route("6E7461", "6E", "MAA", "HYD", LocalTime.of(13, 5), 75, "2999", "8999"),
-                new Route("AI763", "AI", "CCU", "DEL", LocalTime.of(16, 40), 140, "5299", "15499"));
+                new Route("AI763", "AI", "CCU", "DEL", LocalTime.of(16, 40), 140, "5299", "15499"),
+                new Route("6E2005", "6E", "DEL", "HYD", LocalTime.of(12, 30), 130, "4399", "12999"),
+                new Route("AI439", "AI", "DEL", "MAA", LocalTime.of(21, 0), 165, "5199", "15999"));
 
         for (Route r : routes) {
             var flight = adminService.createFlight(new CreateFlightRequest(r.flightNumber(), r.airline(), r.from(),

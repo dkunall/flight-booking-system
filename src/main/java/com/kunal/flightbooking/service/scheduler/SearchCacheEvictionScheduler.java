@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 public class SearchCacheEvictionScheduler {
 
     @Scheduled(fixedRateString = "${app.cache.search-eviction-ms:60000}")
-    @CacheEvict(cacheNames = CacheNames.FLIGHT_SEARCH, allEntries = true)
+    @CacheEvict(cacheNames = {CacheNames.FLIGHT_SEARCH, CacheNames.ROUTE_SEARCH}, allEntries = true)
     public void evictSearchCache() {
         log.debug("Evicted flight search cache");
     }

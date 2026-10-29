@@ -19,7 +19,7 @@ spring:
     locations: classpath:db/migration
   cache:
     type: simple                  # in-memory; the 'docker' profile switches to Redis
-    cache-names: flightSearch
+    cache-names: flightSearch,routeSearch
   data:
     redis:
       repositories:

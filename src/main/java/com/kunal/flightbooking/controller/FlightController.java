@@ -1,9 +1,11 @@
 package com.kunal.flightbooking.controller;
 
 import com.kunal.flightbooking.dto.request.FlightSearchRequest;
+import com.kunal.flightbooking.dto.request.RouteSearchRequest;
 import com.kunal.flightbooking.dto.response.AirportResponse;
 import com.kunal.flightbooking.dto.response.FlightSearchResult;
 import com.kunal.flightbooking.dto.response.PageResponse;
+import com.kunal.flightbooking.dto.response.RouteOption;
 import com.kunal.flightbooking.dto.response.SeatResponse;
 import com.kunal.flightbooking.service.AdminService;
 import com.kunal.flightbooking.service.FlightSearchService;
@@ -30,6 +32,12 @@ public class FlightController {
     @GetMapping("/api/flights/search")
     public PageResponse<FlightSearchResult> search(@Valid @ParameterObject FlightSearchRequest request) {
         return searchService.search(request.toCriteria());
+    }
+
+    @Operation(summary = "Direct and connecting itineraries (up to 2 stops), cheapest or fastest first")
+    @GetMapping("/api/flights/routes")
+    public List<RouteOption> routes(@Valid @ParameterObject RouteSearchRequest request) {
+        return searchService.routes(request.toCriteria());
     }
 
     @Operation(summary = "Seat map for a schedule")
