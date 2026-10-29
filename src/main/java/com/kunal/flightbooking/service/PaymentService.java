@@ -18,7 +18,6 @@ import com.kunal.flightbooking.repository.PaymentRepository;
 import com.kunal.flightbooking.repository.SeatRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,7 +38,7 @@ public class PaymentService {
     private final SeatRepository seatRepository;
     private final PaymentRepository paymentRepository;
     private final PaymentGatewayFactory gatewayFactory;
-    private final ApplicationEventPublisher events;
+    private final OutboxWriter events;
     private final Clock clock;
 
     @Transactional
@@ -72,7 +71,7 @@ public class PaymentService {
         }
         log.info("Payment {} for {} via {} -> booking {}", payment.getStatus(), booking.getPnr(), req.method(),
                 booking.getStatus());
-        events.publishEvent(BookingEvent.of(booking));
+        events.append(BookingEvent.of(booking));
         return DtoMapper.toResponse(payment, booking);
     }
 }

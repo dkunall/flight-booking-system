@@ -31,6 +31,9 @@ public class Booking {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Version
+    private long version;
+
     @Column(nullable = false, unique = true, length = 8)
     private String pnr;
 

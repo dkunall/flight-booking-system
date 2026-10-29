@@ -1,17 +1,15 @@
 package com.kunal.flightbooking.pattern.observer;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.event.TransactionalEventListener;
+import org.springframework.context.event.EventListener;
 
-/** Mock email observer. Runs after commit and asynchronously, so a slow provider never blocks booking. */
+/** Mock email observer. Fed by the outbox relay, so it only ever sees committed state changes. */
 @Slf4j
 @Component
 public class EmailNotificationListener {
 
-    @Async
-    @TransactionalEventListener(fallbackExecution = true)
+    @EventListener
     public void onBookingEvent(BookingEvent event) {
         String subject = switch (event.status()) {
             case SEATS_HELD -> "Seats held for 10 minutes - complete payment for PNR " + event.pnr();

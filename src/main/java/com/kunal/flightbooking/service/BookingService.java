@@ -16,7 +16,6 @@ import com.kunal.flightbooking.pattern.strategy.FareContext;
 import com.kunal.flightbooking.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -50,7 +49,7 @@ public class BookingService {
     private final PaymentRepository paymentRepository;
     private final FareCalculator fareCalculator;
     private final PaymentGatewayFactory gatewayFactory;
-    private final ApplicationEventPublisher events;
+    private final OutboxWriter events;
     private final BookingProperties properties;
     private final Clock clock;
 
@@ -118,7 +117,7 @@ public class BookingService {
         booking.transitionTo(BookingStatus.SEATS_HELD);
 
         log.info("Booking {} holds seats {} until {}", booking.getPnr(), seatIds, holdUntil);
-        events.publishEvent(BookingEvent.of(booking));
+        events.append(BookingEvent.of(booking));
         return DtoMapper.toResponse(booking);
     }
 
@@ -160,7 +159,7 @@ public class BookingService {
             }
         }
         log.info("Booking {} cancelled (was {}), now {}", booking.getPnr(), previous, booking.getStatus());
-        events.publishEvent(BookingEvent.of(booking));
+        events.append(BookingEvent.of(booking));
         return DtoMapper.toResponse(booking);
     }
 
@@ -183,7 +182,7 @@ public class BookingService {
         booking.setFailureReason("HOLD_EXPIRED");
         booking.transitionTo(BookingStatus.FAILED);
         log.info("Hold expired for booking {}, seats released", booking.getPnr());
-        events.publishEvent(BookingEvent.of(booking));
+        events.append(BookingEvent.of(booking));
         return true;
     }
 

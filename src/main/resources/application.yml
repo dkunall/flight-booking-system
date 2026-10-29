@@ -59,6 +59,8 @@ app:
     hold-expiry-check-ms: 30000
   cache:
     search-eviction-ms: 60000
+  outbox:
+    relay-ms: 1000
   scheduling:
     enabled: true
   seed:

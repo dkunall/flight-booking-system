@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.ApplicationEventPublisher;
+import com.kunal.flightbooking.service.OutboxWriter;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -40,7 +40,7 @@ class PaymentServiceTest {
     @Mock BookingRepository bookingRepository;
     @Mock SeatRepository seatRepository;
     @Mock PaymentRepository paymentRepository;
-    @Mock ApplicationEventPublisher events;
+    @Mock OutboxWriter events;
 
     private final Clock clock = Clock.fixed(Instant.parse("2026-10-20T06:00:00Z"), ZoneId.of("Asia/Kolkata"));
     private final LocalDateTime now = LocalDateTime.now(clock);
@@ -75,7 +75,7 @@ class PaymentServiceTest {
         assertThat(response.bookingStatus()).isEqualTo(BookingStatus.CONFIRMED);
         assertThat(response.gatewayReference()).startsWith("UPI-");
         assertThat(seat.getStatus()).isEqualTo(SeatStatus.BOOKED);
-        verify(events).publishEvent(any(BookingEvent.class));
+        verify(events).append(any(BookingEvent.class));
     }
 
     @Test

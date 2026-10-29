@@ -23,7 +23,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.ApplicationEventPublisher;
+import com.kunal.flightbooking.service.OutboxWriter;
 
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -48,7 +48,7 @@ class BookingServiceTest {
     @Mock UserRepository userRepository;
     @Mock PaymentRepository paymentRepository;
     @Mock PaymentGatewayFactory gatewayFactory;
-    @Mock ApplicationEventPublisher events;
+    @Mock OutboxWriter events;
 
     private final ZoneId zone = ZoneId.of("Asia/Kolkata");
     private final Clock clock = Clock.fixed(Instant.parse("2026-10-20T06:00:00Z"), zone);
@@ -95,7 +95,7 @@ class BookingServiceTest {
             assertThat(s.getBookingId()).isEqualTo(42L);
         });
         ArgumentCaptor<BookingEvent> event = ArgumentCaptor.forClass(BookingEvent.class);
-        verify(events).publishEvent(event.capture());
+        verify(events).append(event.capture());
         assertThat(event.getValue().status()).isEqualTo(BookingStatus.SEATS_HELD);
     }
 

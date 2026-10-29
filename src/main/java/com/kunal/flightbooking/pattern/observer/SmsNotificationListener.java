@@ -2,9 +2,8 @@ package com.kunal.flightbooking.pattern.observer;
 
 import com.kunal.flightbooking.domain.BookingStatus;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.event.TransactionalEventListener;
+import org.springframework.context.event.EventListener;
 
 import java.util.EnumSet;
 import java.util.Set;
@@ -17,8 +16,7 @@ public class SmsNotificationListener {
     private static final Set<BookingStatus> SMS_WORTHY =
             EnumSet.of(BookingStatus.CONFIRMED, BookingStatus.CANCELLED, BookingStatus.REFUNDED);
 
-    @Async
-    @TransactionalEventListener(fallbackExecution = true)
+    @EventListener
     public void onBookingEvent(BookingEvent event) {
         if (event.phone() == null || !SMS_WORTHY.contains(event.status())) {
             return;

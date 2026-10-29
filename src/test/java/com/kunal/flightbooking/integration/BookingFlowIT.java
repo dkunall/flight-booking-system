@@ -6,7 +6,10 @@ import com.kunal.flightbooking.domain.SeatClass;
 import com.kunal.flightbooking.dto.response.ScheduleResponse;
 import com.kunal.flightbooking.pattern.observer.BookingEvent;
 import com.kunal.flightbooking.repository.BookingRepository;
+import com.kunal.flightbooking.repository.OutboxEventRepository;
 import com.kunal.flightbooking.repository.PaymentRepository;
+import com.kunal.flightbooking.service.OutboxWriter;
+import com.kunal.flightbooking.service.scheduler.OutboxRelay;
 import com.kunal.flightbooking.support.IntegrationTestBase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.event.ApplicationEvents;
 import org.springframework.test.context.event.RecordApplicationEvents;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 
 import java.util.List;
@@ -31,6 +35,8 @@ class BookingFlowIT extends IntegrationTestBase {
     @Autowired BookingRepository bookingRepository;
     @Autowired PaymentRepository paymentRepository;
     @Autowired ApplicationEvents events;
+    @Autowired OutboxEventRepository outboxRepository;
+    @Autowired OutboxRelay outboxRelay;
 
     private String token;
     private ScheduleResponse schedule;
@@ -81,17 +87,36 @@ class BookingFlowIT extends IntegrationTestBase {
 
     @Test
     void holdSeatsCreatesBookingInSeatsHeldWithTenMinuteExpiry() throws Exception {
-        createBooking(newIdempotencyKey(), bookingBody("FLY10", economySeats.get(0), economySeats.get(1)))
+        MvcResult result = createBooking(newIdempotencyKey(),
+                bookingBody("FLY10", economySeats.get(0), economySeats.get(1)))
                 .andExpect(status().isCreated())
                 .andExpect(header().string("Idempotent-Replayed", "false"))
                 .andExpect(jsonPath("$.status").value("SEATS_HELD"))
                 .andExpect(jsonPath("$.pnr").isNotEmpty())
                 .andExpect(jsonPath("$.passengers.length()").value(2))
                 .andExpect(jsonPath("$.totalAmount").value(9000.0))      // 2 x (5000 - 10%)
-                .andExpect(jsonPath("$.holdExpiresAt").isNotEmpty());
+                .andExpect(jsonPath("$.holdExpiresAt").isNotEmpty())
+                .andReturn();
 
         assertThat(seatStatus(economySeats.get(0))).isEqualTo("HELD");
-        assertThat(events.stream(BookingEvent.class).map(BookingEvent::status)).contains(BookingStatus.SEATS_HELD);
+
+        // The event sits in the outbox until the relay runs, then reaches the listeners exactly once.
+        long bookingId = read(result).get("id").asLong();
+        String pnr = read(result).get("pnr").asText();
+        assertThat(events.stream(BookingEvent.class).filter(e -> pnr.equals(e.pnr()))).isEmpty();
+        assertThat(outboxRepository.findByAggregateTypeAndAggregateIdOrderById(OutboxWriter.BOOKING, bookingId))
+                .singleElement()
+                .satisfies(row -> {
+                    assertThat(row.getEventType()).isEqualTo("BOOKING_SEATS_HELD");
+                    assertThat(row.getPublishedAt()).isNull();
+                });
+        outboxRelay.relayPending();
+        assertThat(events.stream(BookingEvent.class).filter(e -> pnr.equals(e.pnr())).map(BookingEvent::status))
+                .containsExactly(BookingStatus.SEATS_HELD);
+        outboxRelay.relayPending();
+        assertThat(events.stream(BookingEvent.class).filter(e -> pnr.equals(e.pnr()))).hasSize(1);
+        assertThat(outboxRepository.findByAggregateTypeAndAggregateIdOrderById(OutboxWriter.BOOKING, bookingId))
+                .allSatisfy(row -> assertThat(row.getPublishedAt()).isNotNull());
     }
 
     @Test
