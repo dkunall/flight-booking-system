@@ -3,6 +3,7 @@ package com.kunal.flightbooking.dto.response;
 import com.kunal.flightbooking.domain.BookingStatus;
 import com.kunal.flightbooking.domain.SeatClass;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -22,5 +23,5 @@ public record BookingResponse(
         LocalDateTime holdExpiresAt,
         String failureReason,
         List<PassengerResponse> passengers,
-        LocalDateTime createdAt) {
+        LocalDateTime createdAt) implements Serializable {
 }

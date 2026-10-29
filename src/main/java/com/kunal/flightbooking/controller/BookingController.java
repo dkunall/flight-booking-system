@@ -3,6 +3,10 @@ package com.kunal.flightbooking.controller;
 import com.kunal.flightbooking.dto.request.CreateBookingRequest;
 import com.kunal.flightbooking.dto.request.PaymentRequest;
 import com.kunal.flightbooking.dto.response.BookingResponse;
+import com.kunal.flightbooking.dto.response.PageResponse;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import org.springframework.web.bind.annotation.RequestParam;
 import com.kunal.flightbooking.dto.response.PaymentResponse;
 import com.kunal.flightbooking.security.AuthUser;
 import com.kunal.flightbooking.service.BookingService;
@@ -73,7 +77,9 @@ public class BookingController {
 
     @Operation(summary = "List my bookings, newest first")
     @GetMapping
-    public List<BookingResponse> list(@AuthenticationPrincipal AuthUser user) {
-        return bookingService.listBookings(user.getId());
+    public PageResponse<BookingResponse> list(@AuthenticationPrincipal AuthUser user,
+                                              @RequestParam(defaultValue = "0") @Min(0) int page,
+                                              @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
+        return bookingService.listBookings(user.getId(), page, size);
     }
 }

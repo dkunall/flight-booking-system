@@ -3,6 +3,8 @@ package com.kunal.flightbooking.repository;
 import com.kunal.flightbooking.domain.Booking;
 import com.kunal.flightbooking.domain.BookingStatus;
 import jakarta.persistence.LockModeType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -20,8 +22,10 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     @Query("select b from Booking b where b.id = :id")
     Optional<Booking> findByIdForUpdate(@Param("id") Long id);
 
-    @Query("select b from Booking b where b.user.id = :userId order by b.createdAt desc")
-    List<Booking> findByUserId(@Param("userId") Long userId);
+    /** Served by idx_bookings_user_created. */
+    @Query(value = "select b from Booking b where b.user.id = :userId order by b.createdAt desc, b.id desc",
+           countQuery = "select count(b) from Booking b where b.user.id = :userId")
+    Page<Booking> findByUserId(@Param("userId") Long userId, Pageable pageable);
 
     @Query("select b.id from Booking b where b.status in :statuses and b.holdExpiresAt <= :now order by b.holdExpiresAt")
     List<Long> findIdsWithExpiredHold(@Param("statuses") Collection<BookingStatus> statuses,

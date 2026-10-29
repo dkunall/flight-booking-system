@@ -6,6 +6,7 @@ import com.kunal.flightbooking.dto.mapper.DtoMapper;
 import com.kunal.flightbooking.dto.request.CreateBookingRequest;
 import com.kunal.flightbooking.dto.request.PassengerRequest;
 import com.kunal.flightbooking.dto.response.BookingResponse;
+import com.kunal.flightbooking.dto.response.PageResponse;
 import com.kunal.flightbooking.exception.BusinessException;
 import com.kunal.flightbooking.exception.ResourceNotFoundException;
 import com.kunal.flightbooking.exception.SeatUnavailableException;
@@ -16,6 +17,7 @@ import com.kunal.flightbooking.pattern.strategy.FareContext;
 import com.kunal.flightbooking.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -127,8 +129,10 @@ public class BookingService {
     }
 
     @Transactional(readOnly = true)
-    public List<BookingResponse> listBookings(Long userId) {
-        return bookingRepository.findByUserId(userId).stream().map(DtoMapper::toResponse).toList();
+    public PageResponse<BookingResponse> listBookings(Long userId, int page, int size) {
+        var result = bookingRepository.findByUserId(userId, PageRequest.of(page, size));
+        return new PageResponse<>(result.map(DtoMapper::toResponse).getContent(), page, size,
+                result.getTotalElements(), result.getTotalPages());
     }
 
     /**

@@ -248,8 +248,12 @@ class BookingFlowIT extends IntegrationTestBase {
     void listsMyBookings() throws Exception {
         holdSeats(economySeats.get(0));
         holdSeats(economySeats.get(1));
-        mvc.perform(get("/api/bookings").header("Authorization", token))
+        mvc.perform(get("/api/bookings?size=1").header("Authorization", token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(2));
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.totalElements").value(2))
+                .andExpect(jsonPath("$.totalPages").value(2));
+        mvc.perform(get("/api/bookings?size=500").header("Authorization", token))
+                .andExpect(status().isBadRequest());
     }
 }
