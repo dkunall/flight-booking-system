@@ -1,5 +1,5 @@
 # ---------- build stage ----------
-FROM eclipse-temurin:17-jdk AS build
+FROM eclipse-temurin:21-jdk AS build
 WORKDIR /workspace
 COPY mvnw pom.xml ./
 COPY .mvn .mvn
@@ -8,7 +8,7 @@ COPY src src
 RUN ./mvnw -B -q package -DskipTests && cp target/flight-booking-system-*.jar app.jar
 
 # ---------- runtime stage ----------
-FROM eclipse-temurin:17-jre
+FROM eclipse-temurin:21-jre
 WORKDIR /app
 RUN groupadd --system app && useradd --system --gid app --no-create-home app
 COPY --from=build /workspace/app.jar app.jar
