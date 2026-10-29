@@ -1,18 +1,19 @@
-# ---------- build stage ----------
-FROM eclipse-temurin:21-jdk AS build
-WORKDIR /workspace
-COPY mvnw pom.xml ./
-COPY .mvn .mvn
-RUN chmod +x mvnw && ./mvnw -B -q dependency:go-offline
+# Build
+FROM maven:3.9.9-eclipse-temurin-21-alpine AS build
+WORKDIR /build
+COPY pom.xml ./
+RUN mvn -B -q -ntp dependency:go-offline
 COPY src src
-RUN ./mvnw -B -q package -DskipTests && cp target/flight-booking-system-*.jar app.jar
+RUN mvn -B -q -ntp package -DskipTests && cp target/flight-booking-system-*.jar app.jar
 
-# ---------- runtime stage ----------
-FROM eclipse-temurin:21-jre
+# Run
+FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
-RUN groupadd --system app && useradd --system --gid app --no-create-home app
-COPY --from=build /workspace/app.jar app.jar
+RUN addgroup -S app && adduser -S -G app -H app
+COPY --from=build /build/app.jar app.jar
 USER app
-EXPOSE 8080
+EXPOSE 8080 8081
 ENV JAVA_OPTS="-XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError"
+HEALTHCHECK --interval=10s --timeout=3s --start-period=40s --retries=5 \
+  CMD wget -qO- http://localhost:8081/actuator/health/readiness | grep -q '"UP"' || exit 1
 ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar /app/app.jar"]

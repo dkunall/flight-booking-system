@@ -1,3 +1,7 @@
+name: flightbook
+
+# Ports are bound to localhost and picked to stay out of the way of other local stacks.
+# App: 7580, actuator (health, prometheus): 7581, Postgres: 55480, Redis: 6430, Prometheus: 9120.
 services:
   postgres:
     image: postgres:16-alpine
@@ -6,7 +10,7 @@ services:
       POSTGRES_USER: flight
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env (see .env.example)}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:55480:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -18,7 +22,7 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6430:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -27,21 +31,36 @@ services:
 
   app:
     build: .
+    image: flightbook-app:local
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
     environment:
-      SPRING_PROFILES_ACTIVE: docker,dev
+      SPRING_PROFILES_ACTIVE: docker,dev     # dev = seed demo data; drop it for a real deployment
       DB_URL: jdbc:postgresql://postgres:5432/flightdb
       DB_USERNAME: flight
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       REDIS_HOST: redis
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env (see .env.example)}
+      PAYMENT_WEBHOOK_SECRET: ${PAYMENT_WEBHOOK_SECRET:?Set PAYMENT_WEBHOOK_SECRET in .env (see .env.example)}
       SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-}
     ports:
-      - "8080:8080"
+      - "127.0.0.1:7580:8080"
+      - "127.0.0.1:7581:8081"
+    stop_grace_period: 30s
+
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    profiles: ["metrics"]
+    command: ["--config.file=/etc/prometheus/prometheus.yml"]
+    volumes:
+      - ./ops/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "127.0.0.1:9120:9090"
+    depends_on:
+      - app
 
 volumes:
   pgdata:

@@ -15,3 +15,9 @@ management:
   health:
     redis:
       enabled: true
+  server:
+    port: ${MANAGEMENT_PORT:8081}   # actuator on its own port, so it can be kept off the public network
+logging:
+  structured:
+    format:
+      console: ecs                # JSON lines; MDC (correlationId) is included
