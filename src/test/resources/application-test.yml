@@ -12,6 +12,9 @@ app:
     webhook-secret: test-only-webhook-secret-used-by-the-test-suite-0123
   scheduling:
     enabled: false   # tests trigger the schedulers explicitly
+  rate-limit:
+    search:
+      enabled: false # OpsIT turns it on with a tiny bucket
 logging:
   level:
     com.kunal.flightbooking: INFO
