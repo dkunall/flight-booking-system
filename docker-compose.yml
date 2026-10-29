@@ -46,6 +46,7 @@ services:
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env (see .env.example)}
       PAYMENT_WEBHOOK_SECRET: ${PAYMENT_WEBHOOK_SECRET:?Set PAYMENT_WEBHOOK_SECRET in .env (see .env.example)}
       SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-}
+      APP_RATE_LIMIT_SEARCH_ENABLED: ${APP_RATE_LIMIT_SEARCH_ENABLED:-true}   # perf runs turn it off
     ports:
       - "127.0.0.1:7580:8080"
       - "127.0.0.1:7581:8081"
