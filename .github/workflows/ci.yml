@@ -5,6 +5,9 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -18,10 +21,11 @@ jobs:
           java-version: "21"
           cache: maven
 
-      - name: Build, unit + integration tests (mvn verify)
+      # Unit tests, then Testcontainers ITs against Postgres 16
+      - name: mvn verify
         run: ./mvnw -B -ntp verify
 
-      - name: Upload test & coverage reports
+      - name: Upload test and coverage reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -30,3 +34,23 @@ jobs:
             target/surefire-reports
             target/failsafe-reports
             target/site/jacoco
+
+  image:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build -t flightbook-app:ci .
+
+      # Fails on fixable HIGH/CRITICAL in the OS packages or the jars. Exceptions live in .trivyignore.
+      - name: Trivy scan
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: flightbook-app:ci
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          trivyignores: .trivyignore
+          exit-code: "1"
